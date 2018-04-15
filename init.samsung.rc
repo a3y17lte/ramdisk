@@ -503,7 +503,6 @@ on post-fs-data
     chown system system /efs/drm/h2k
 
     # icd
-    check_icd
     chown system system /dev/icd
     chmod 0644 /dev/icd
     chown system system /dev/icdr
@@ -600,10 +599,10 @@ on post-fs-data
     mkdir /data/bcmnfc/param 0700 nfc nfc
 
     # Samsung Pay
-    mkdir /efs/pfw_data 0760 spay spay
+    # mkdir /efs/pfw_data 0760 spay spay
 
     # MST/NFC Switch
-    chown spay system /dev/mst_ctrl
+    # chown spay system /dev/mst_ctrl
     chmod 0660 /dev/mst_ctrl
 
 	#MST Factory Test
@@ -613,14 +612,7 @@ on post-fs-data
 	#MST-MFC Support
     chown system system /sys/class/mstldo/mst_drv/mfc
     chmod 0770 /sys/class/mstldo/mst_drv/mfc
-
-# [ SEC_SELINUX_PORTING_COMMON
-    mkdir /data/misc/audit 0775 audit system
-
-    # start auditd
-    start auditd
-# ] SEC_SELINUX_PORTING_COMMON
-
+    
     # ATT CIQ
     mkdir /data/iq_archive 0771 system system
     mkdir /data/iq_archive/packages 0771 system system
@@ -841,7 +833,6 @@ on boot
     chmod 0660 /dev/pn547
     chown nfc nfc /dev/pn547
     chown nfc /dev/pn547
-    chgrp nfc /dev/pn547
 
     # NFC_BROADCOM
     chmod 0600 /dev/bcm2079x
@@ -1523,9 +1514,9 @@ on property:ro.debuggable=1
 service vaultkeeperd /system/bin/vaultkeeperd
     class core
 
-service drm /system/bin/drmserver
-    class main
-    user drm
+#service drm /system/bin/drmserver
+#   class main
+#    user drm
     group drm system inet drmrpc
 
 service scs /system/bin/scs
@@ -1646,11 +1637,6 @@ service iod /system/bin/iod
 on property:sys.boot_completed=1
     pdp result
     start iod
-
-# icd
-on property:init.svc.media=restarting
-    check_icd
-    start icd
 
 # otp
 service otp /system/bin/otp_server
