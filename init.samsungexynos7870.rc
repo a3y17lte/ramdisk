@@ -434,7 +434,7 @@ on fs
     chmod 0771 /cpefs
 
 # Copy DRM Key
-    copy /system/app/wv.keys /factory/wv.keys
+     #copy /system/app/wv.keys /factory/wv.keys
 
 # Permission for DRM Key
     chmod 0644 /factory/wv.keys
@@ -537,11 +537,12 @@ on property:ro.bootmode=charger
 
 on property:ro.bootmode=charger
     wait /dev/block/platform/13540000.dwmmc0/by-name/EFS
-    check_fs /dev/block/platform/13540000.dwmmc0/by-name/EFS ext4
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
 
-on property:ro.bootmode=charger
-   class_start sec-charger
+service charger /charger
+    class charger
+    critical
+    seclabel u:r:charger:s0
 
 # Bluetooth
 on property:wc_transport.start_hci=true
@@ -655,13 +656,13 @@ on property:ro.securestorage.knox=true
     mkdir /dev/.secure_storage
     chmod 0711 /dev/.secure_storage
     chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
+    restorecon_recursive /dev/.secure_storage
     start secure_storage
 on property:ro.securestorage.support=true
     mkdir /dev/.secure_storage
     chmod 0711 /dev/.secure_storage
     chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
+    restorecon_recursive /dev/.secure_storage
     start secure_storage
 
 # umount service
