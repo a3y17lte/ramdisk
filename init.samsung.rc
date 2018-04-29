@@ -418,8 +418,6 @@ on post-fs
     start sec-sh
     start logd
 
-    # mobicore
-    setprop sys.mobicoredaemon.enable stopped
 
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -519,16 +517,6 @@ on post-fs-data
     start debuggerd
     start debuggerd64
 
-    # mobicore
-    export MC_AUTH_TOKEN_PATH /efs
-    mkdir /efs/TEE  0770 radio system
-	  chmod 0660 /dev/t-base-tui
-    chown system system /dev/t-base-tui
-    start mobicore
-
-    # Make sure we have the device encryption key.
-    start vold
-    installkey /data
 
 
     # Start bootcharting as soon as possible after the data partition is
@@ -1289,13 +1277,6 @@ on boot
     chown system system /sys/class/sec/sddata/sd_data
     chmod 444 /sys/class/sec/sddata/sd_data
 
-on nonencrypted
-    # mobicore
-    mkdir /data/misc/mcRegistry 0775 system system
-    # A/B update verifier that marks a successful boot.
-    exec - root -- /system/bin/update_verifier nonencrypted
-    class_start main
-    class_start late_start
 
 on property:sys.init_log_level=*
     loglevel ${sys.init_log_level}
@@ -1351,12 +1332,6 @@ on property:vold.decrypt=trigger_restart_framework
     # PDP : Preload data preserve
     pdp restore
     pdp backup
-    # mobicore
-    mkdir /data/misc/mcRegistry 0775 system system
-    # A/B update verifier that marks a successful boot.
-    exec - root -- /system/bin/update_verifier trigger_restart_framework
-    class_start main
-    class_start late_start
 
 on property:vold.decrypt=trigger_shutdown_framework
     class_reset late_start
@@ -1526,16 +1501,6 @@ service scs /system/bin/scs
     oneshot
     disabled
 
-# MobiCore startup
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin -r /system/app/mcRegistry/ffffffffd0000000000000000000001c.tlbin
-    class core
-    user system
-    group system
-    disabled
-
-service flash_recovery /system/bin/install-recovery.sh
-    class main
-    oneshot
 
 # [ SEC_SELINUX_PORTING_COMMON
 service auditd /system/bin/auditd -k
