@@ -762,6 +762,8 @@ on post-fs-data
 
 on boot
 
+write /sys/class/input_booster/level 0
+
 # Permissions for Fingerprint_sensor
     chown system radio /sys/class/fingerprint/fingerprint/type_check
     chown system radio /sys/class/fingerprint/fingerprint/name
