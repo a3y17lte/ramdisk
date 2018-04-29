@@ -417,7 +417,8 @@ on late-init
 on post-fs
     start sec-sh
     start logd
-
+    # Mobicore
+    setprop sys.mobicoredaemon.enable stopped
 
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -476,6 +477,12 @@ on post-fs
     mkdir /data/misc/vpnclientd 0770 system system
 
 on post-fs-data
+    # Mobicore
+    export MC_AUTH_TOKEN_PATH /efs
+    mkdir /efs/TEE  0770 radio system
+    chmod 0660 /dev/t-base-tui
+    chown system system /dev/t-base-tui
+    start mobicore
 # [ SEC_SELINUX_PORTING_COMMON
     # Reload SE Android Policy
     setprop selinux.reload_policy 1
@@ -755,10 +762,36 @@ on post-fs-data
 
 on boot
 
-	# KNOX KAP
-    chown system system /dev/knox_kap
-    chmod 0660 /dev/knox_kap
+# Permissions for Fingerprint_sensor
+    chown system radio /sys/class/fingerprint/fingerprint/type_check
+    chown system radio /sys/class/fingerprint/fingerprint/name
+    chown system radio /sys/class/fingerprint/fingerprint/vendor
+    chown system radio /sys/class/fingerprint/fingerprint/adm
 
+    chown system system /dev/esfp0
+    chmod 0660 /dev/esfp0
+    
+# Permission for Mobicore
+    chown radio system /dev/mobicore-user
+    chown system system /dev/mobicore
+    chown system system /dev/s5p-smem
+
+    chmod 0666 /dev/mobicore-user
+    chmod 0700 /dev/mobicore
+    chmod 0660 /dev/s5p-smem
+
+on nonencrypted
+    mkdir /data/misc/mcRegistry 0775 system system
+
+on property:vold.decrypt=trigger_restart_framework
+    mkdir /data/misc/mcRegistry 0775 system system
+
+service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
+    class core
+    user system
+    group system
+    disabled
+    
     # permissions for bluetooth.
     mkdir /efs/bluetooth 0775 radio system
     chown radio system /efs/bluetooth
@@ -1239,10 +1272,6 @@ on boot
 # HMT relay mode
     chown radio system /sys/devices/virtual/relay_on
 
-# KNOX_NAP
-    chmod 0660 /dev/ncm_dev
-    chown system system /dev/ncm_dev
-
 # UFS
     chown system system /sys/block/sda/device/model
     chmod 660 /sys/block/sda/device/model
@@ -1422,64 +1451,6 @@ service edmaudit /system/bin/edmaudit
 
 ## WTL_EDM_END
 
-service kap_enable /sbin/knox_changer -e
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-service kap_disable /sbin/knox_changer -d
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-on property:security.knox_kap_mode=true
-    start kap_enable
-on property:security.knox_kap_mode=false
-    start kap_disable
-
-service afw_enable /sbin/knox_changer -f
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-service afw_disable /sbin/knox_changer -s
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-on property:security.knox_afw_mode=true
-    start afw_enable
-on property:security.knox_afw_mode=false
-    start afw_disable
-
-service ucs_enable /sbin/knox_changer -u
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-service ucs_disable /sbin/knox_changer -v
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-service ucs_reset /sbin/knox_changer -w
-    class main
-    seclabel u:r:kapd:s0
-    disabled
-    oneshot
-
-on property:security.knox_ucs_mode=true
-    start ucs_enable
-on property:security.knox_ucs_mode=false
-    start ucs_disable
-on property:security.knox_ucs_mode=reset
-    start ucs_reset
 on property:ro.debuggable=1
     # Give writes to anyone for the trace folder on debug builds.
     # The folder is used to store method traces.
