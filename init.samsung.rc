@@ -1354,11 +1354,6 @@ on property:vold.decrypt=trigger_load_persist_props
 on property:vold.decrypt=trigger_post_fs_data
     trigger post-fs-data
 
-on property:vold.decrypt=trigger_restart_min_framework
-    # A/B update verifier that marks a successful boot.
-    exec - root -- /system/bin/update_verifier trigger_restart_min_framework
-    class_start main
-
 on property:vold.decrypt=trigger_restart_framework
     # PDP : Preload data preserve
     pdp restore
@@ -1386,12 +1381,6 @@ on property:sys.sysctl.compact_memory=1
     setprop sys.sysctl.compact_memory 0
     start compact_memory
 
-service compact_memory /sbin/bgcompact
-    user root
-    seclabel u:r:sswap:s0
-    oneshot
-    disabled
-
 # "tcp_default_init_rwnd" Is too long!
 on property:sys.sysctl.tcp_def_init_rwnd=*
     write /proc/sys/net/ipv4/tcp_default_init_rwnd ${sys.sysctl.tcp_def_init_rwnd}
@@ -1402,34 +1391,11 @@ on property:security.perf_harden=0
 on property:security.perf_harden=1
     write /proc/sys/kernel/perf_event_paranoid 3
 
-## Daemon processes to be run by init.
-##
-# deferred initcall
-service sec-sh /system/bin/sh /system/etc/init.sec.boot.sh
-    class core
-    user root
-    oneshot
-
-service sysmon /system/bin/sysmon
-    class core
-    user root
-	group root readproc
-    oneshot
-
+    
 service ueventd /sbin/ueventd
     class core
     critical
     seclabel u:r:ueventd:s0
-
-service healthd /sbin/healthd
-    class core
-    critical
-    seclabel u:r:healthd:s0
-    group root system wakelock
-
-service lpm /system/bin/lpm
-    class sec-charger
-    critical
 
 service console /system/bin/sh
     class core
@@ -1439,184 +1405,23 @@ service console /system/bin/sh
     group shell log readproc
     seclabel u:r:shell:s0
 
-service SIDESYNC_service /system/bin/ss_conn_daemon
-    class main
-    socket ss_conn_daemon stream 0666 system system
-    user system
-    group inet net_raw
-
-## WTL_EDM_START
-## EDM AuditLog
-service edmaudit /system/bin/edmaudit
-    class main
-    user root
-
-## WTL_EDM_END
-
 on property:ro.debuggable=1
     # Give writes to anyone for the trace folder on debug builds.
     # The folder is used to store method traces.
     chmod 0773 /data/misc/trace
     start console
 
-service vaultkeeperd /system/bin/vaultkeeperd
-    class core
-
 #service drm /system/bin/drmserver
 #   class main
 #    user drm
     group drm system inet drmrpc
 
-service scs /system/bin/scs
-    class main
-    user system
-    group system
-    oneshot
-    disabled
-
-
-# [ SEC_SELINUX_PORTING_COMMON
-service auditd /system/bin/auditd -k
-    class main
-    seclabel u:r:auditd:s0
-    disabled
-    oneshot
-
-on property:selinux.sec.restorecon=1
-    restorecon_data_force /data
-
-# Reload SE Android Policy for MDM
-on property:persist.security.mdm.policy=1
-    setprop selinux.reload_policy 1
-# ] SEC_SELINUX_PORTING_COMMON
-
-# bootchecker
-service bootchecker /system/bin/bootchecker
-    class late_start
-    user system
-    group system log
-    oneshot
-
-# [ Professional audio
-service apaservice /system/bin/apaservice
-	class main
-	user jack
-	group inet sdcard_rw sdcard_r media_rw shell
-
-service jackservice /system/bin/jackservice
-	class main
-	user jack
-	group audio inet shell
-# Professional audio ]
-
-# icd
-service icd /system/bin/icd
-    class main
-    user system
-    group system log
-    onrestart check_icd
-    oneshot
-
-on property:init.svc.zygote=restarting
-    restart bootchecker
-
-# strongSwan VPN
-service charon /system/bin/charon
-    class main
-    socket charon stream 600 system system
-    # charon will setuid to vpn after getting necessary resources.
-    group vpn net_admin inet shell
-    disabled
-    oneshot
-
-# ccm
-service ccm /system/bin/tlc_server CCM
-  user system
-  group system
-  disabled
-
-on property:persist.security.tlc.ccm=1
-  start ccm
-  setprop persist.security.tlc.ccm 0
-
-# dcm
-service dcm /system/bin/tlc_server DCM
-  user system
-  group system
-  disabled
-
-on property:persist.security.tlc.restartdcm=1
-  stop  dcm
-  setprop persist.security.tlc.dcm 1
-  setprop persist.security.tlc.restartdcm 0
-
-on property:persist.security.tlc.dcm=1
-  start dcm
-  setprop persist.security.tlc.dcm 0
-
-# esecomm
-  service esecomm /system/bin/tlc_server ESECOMM
-  user system
-  group system
-  disabled
-
-on property:persist.security.tlc.esecomm=1
-  start esecomm
-  setprop persist.security.tlc.esecomm 0
-
-# IO stats Deamon
-service iod /system/bin/iod
-    user system
-    group shell
-    class main
-    oneshot
-    disabled
-
-on property:sys.boot_completed=1
-    pdp result
-    start iod
-
-# otp
-service otp /system/bin/otp_server
-    user system
-    group system
-    disabled
-
-on property:persist.security.tlc.otp=1
-    start otp
-    setprop persist.security.tlc.otp 0
 
 # Sensorhub service
 service sensorhubservice /system/bin/sensorhubservice
     class main
     user system
     group input
-
-# SecEDS
-service TvoutService_C /system/bin/bintvoutservice
-    class main
-    user system
-    group graphics
-on property:ro.SecEDS.enable=false
-    stop TvoutService_C
-
-#preparefbe
-service preparefbe_ce /system/bin/preparefbe storage_ce
-    oneshot
-    disabled
-service preparefbe_de /system/bin/preparefbe storage_de
-    oneshot
-    disabled
-
-service vpnclientd /system/bin/vpnclientd
-    socket vpnclientd seqpacket 0600 system system
-    user system
-    group system net_admin inet net_raw
-    disabled
-on property:service.vpnclientd.enable=1
-    start vpnclientd
-on property:service.vpnclientd.enable=0
-    stop vpnclientd
 
 on property:sys.sf.restart=1
     restart surfaceflinger
