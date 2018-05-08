@@ -109,10 +109,6 @@
 # cbd modem block
 /dev/block/mmcblk0p5     0400  radio   system
 
-# for DM tools
-/dev/umts_dm0             0660   radio      radio
-/dev/umts_router          0660   radio      radio
-
 # SIPC RIL
 /dev/umts_boot0           0666   radio      radio
 /dev/umts_ipc0            0660   radio      radio
