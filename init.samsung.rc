@@ -415,10 +415,11 @@ on late-init
 
 
 on post-fs
-    start sec-sh
-    start logd
     # Mobicore
     setprop sys.mobicoredaemon.enable stopped
+
+    start sec-sh
+    start logd
 
     # once everything is setup, no need to modify /
     mount rootfs rootfs / ro remount
@@ -477,12 +478,14 @@ on post-fs
     mkdir /data/misc/vpnclientd 0770 system system
 
 on post-fs-data
+
     # Mobicore
     export MC_AUTH_TOKEN_PATH /efs
     mkdir /efs/TEE  0770 radio system
     chmod 0660 /dev/t-base-tui
     chown system system /dev/t-base-tui
     start mobicore
+
 # [ SEC_SELINUX_PORTING_COMMON
     # Reload SE Android Policy
     setprop selinux.reload_policy 1
@@ -782,18 +785,6 @@ write /sys/class/input_booster/level 0
     chmod 0700 /dev/mobicore
     chmod 0660 /dev/s5p-smem
 
-on nonencrypted
-    mkdir /data/misc/mcRegistry 0775 system system
-
-on property:vold.decrypt=trigger_restart_framework
-    mkdir /data/misc/mcRegistry 0775 system system
-
-service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
-    class core
-    user system
-    group system
-    disabled
-    
     # permissions for bluetooth.
     mkdir /efs/bluetooth 0775 radio system
     chown radio system /efs/bluetooth
@@ -1340,11 +1331,21 @@ on charger
     chmod 0400 /efs/Battery/battery_data.dat
     write /sys/class/power_supply/battery/batt_update_data "/efs/Battery/battery_data.dat"
     class_start charger
+    
+on nonencrypted
+    mkdir /data/misc/mcRegistry 0775 system system
 
-
+on property:vold.decrypt=trigger_restart_framework
+    mkdir /data/misc/mcRegistry 0775 system system
 on property:vold.decrypt=trigger_reset_main
     class_reset main
-
+    
+service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
+    class core
+    user system
+    group system
+    disabled
+    
 on property:vold.decrypt=trigger_load_persist_props
     load_persist_props
     start sysmon
